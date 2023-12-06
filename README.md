@@ -70,4 +70,4 @@ docker exec nlq-webserver python opensearch_deploy.py
 
 ### 6. Access Streamlit Web UI
 
-Open url in the browser: http://<your-ec2-public-ip>
+Open url in the browser: `http://<your-ec2-public-ip>`
