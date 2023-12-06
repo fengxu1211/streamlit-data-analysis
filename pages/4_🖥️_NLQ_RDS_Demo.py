@@ -34,10 +34,8 @@ TOP_K = os.environ.get("TOP_K", 250)
 TOP_P = os.environ.get("TOP_P", 1)
 STOP_SEQUENCES = os.environ.get("STOP_SEQUENCES", ["\n\nHuman"])
 BASE_AVATAR_URL = (
-    "https://raw.githubusercontent.com/garystafford-aws/static-assets/main/static"
+    "./app/static"
 )
-ASSISTANT_ICON = os.environ.get("ASSISTANT_ICON", "bot-64px.png")
-USER_ICON = os.environ.get("USER_ICON", "human-64px.png")
 HUGGING_FACE_EMBEDDINGS_MODEL = os.environ.get(
     "HUGGING_FACE_EMBEDDINGS_MODEL", "sentence-transformers/all-MiniLM-L6-v2"
 )
@@ -180,24 +178,20 @@ def main():
                                 st.session_state["generated"][i] != NO_ANSWER_MSG
                             ):
                                 with st.chat_message(
-                                    "assistant",
-                                    avatar=f"{BASE_AVATAR_URL}/{ASSISTANT_ICON}",
+                                    "assistant"
                                 ):
                                     st.write(st.session_state["generated"][i]["result"])
                                 with st.chat_message(
-                                    "user",
-                                    avatar=f"{BASE_AVATAR_URL}/{USER_ICON}",
+                                    "user"
                                 ):
                                     st.write(st.session_state["past"][i])
                             else:
                                 with st.chat_message(
-                                    "assistant",
-                                    avatar=f"{BASE_AVATAR_URL}/{ASSISTANT_ICON}",
+                                    "assistant"
                                 ):
                                     st.write(NO_ANSWER_MSG)
                                 with st.chat_message(
-                                    "user",
-                                    avatar=f"{BASE_AVATAR_URL}/{USER_ICON}",
+                                    "user"
                                 ):
                                     st.write(st.session_state["past"][i])
         with col2:
