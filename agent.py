@@ -12,10 +12,11 @@ import os
 
 API_KEY = os.environ.get("OPENAI_API_KEY", 'sk-abc')
 API_BASE = os.environ.get("OPENAI_API_BASE", "http://localhost:18000/v1")
+MODEL_NAME = os.environ.get("MODEL_NAME", "anthropic.claude-v2")
 
 # llm = ChatOpenAI(openai_api_key=API_KEY, model_name='gpt-4-1106-preview', temperature=0)
 llm = ChatOpenAI(openai_api_key=API_KEY, openai_api_base=API_BASE,
-                 model_name='anthropic.claude-v2', temperature=0, verbose=True, max_tokens=4096)
+                 model_name=MODEL_NAME, temperature=0, verbose=True, max_tokens=4096)
 
 
 def create_agent(grounding_source_dict):

@@ -21,7 +21,7 @@ from PIL.Image import Image as PILImage
 import textwrap
 
 st.set_page_config(
-    page_title="Data Agent",
+    page_title="Chat With CSV Demo",
     page_icon="🧊",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -132,18 +132,26 @@ def profile_data(filename, dataframe):
     return results.__str__()
 
 
+def get_session_messages() -> list:
+    return st.session_state.csv_messages
+
+
+def set_session_messages(messages: list):
+    if "csv_messages" not in st.session_state:
+        st.session_state.csv_messages = messages
+
+
 def persist_assistant_message(message):
-    st.session_state.messages.append({"role": "assistant", "content": message})
+    get_session_messages().append({"role": "assistant", "content": message})
 
 
 def persist_user_message(message):
-    st.session_state.messages.append({"role": "user", "content": message})
+    get_session_messages().append({"role": "user", "content": message})
 
 
 init_log()
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+set_session_messages([])
 
 if 'data_file' not in st.session_state:
     st.session_state.data_file = None
@@ -158,8 +166,6 @@ st.sidebar.title("👨‍💻 Chat with your CSV")
 
 available_models = {
     "Claude2(Bedrock)": "anthropic.claude-v2",
-    "ChatGPT-4": "gpt-4",
-    "ChatGPT-3.5": "gpt-3.5-turbo"
 }
 
 with st.sidebar:
@@ -173,7 +179,7 @@ with st.sidebar:
         # if selected file has changed, then reset messages and profiling flag
         if filename != st.session_state.data_filename:
             logger.info(f'selected file: {filename}')
-            st.session_state.messages = []
+            set_session_messages([])
             st.session_state.has_profiled = False
             st.session_state.data_file = df
             st.session_state.data_filename = filename
@@ -199,8 +205,8 @@ with st.sidebar:
     )
     selected_model_id = available_models[selected_model]
 
-logger.info(f'program start. current messages length: {len(st.session_state.messages)}')
-for message in st.session_state.messages:
+logger.info(f'program start. current messages length: {len(get_session_messages())}')
+for message in get_session_messages():
     with st.chat_message(message["role"]):
         if isinstance(message["content"], list):
             for seg in message["content"]:
@@ -224,14 +230,22 @@ if not st.session_state.has_profiled and st.session_state.data_file is not None:
         with st.spinner('analyzing...'):
             profile_result = profile_data(filename, file_df)
             write_response(profile_result)
-            persist_assistant_message([file_df.head(), (profile_result, 'md')])
+            message_list = [file_df.head(), (profile_result, 'md')]
             st.session_state.has_profiled = True
-
+        if 'SaaSSales' in filename:
+            with st.expander("Click here for more sample questions..."):
+                more_questions_md = """
+                    4. show me an bar chart of monthly total sales using order date in the format of yyyy-mm.
+                    5. what are the top 5 most profitable customers?
+                """
+                st.markdown(more_questions_md)
+                message_list.append((more_questions_md, 'md'))
+        persist_assistant_message(message_list)
 
 if query := st.chat_input("Insert your query", disabled=not st.session_state.data_filename):
     file_df = st.session_state.data_file
     filename = st.session_state.data_filename
-    st.session_state.messages.append({"role": "user", "content": query})
+    persist_user_message(query)
     with st.chat_message("user"):
         st.markdown(query)
 
@@ -248,4 +262,4 @@ if query := st.chat_input("Insert your query", disabled=not st.session_state.dat
             resp_list = write_response(response)
             persist_assistant_message(resp_list)
 
-logger.info(f'program end. current messages length: {len(st.session_state.messages)}')
+logger.info(f'program end. current messages length: {len(get_session_messages())}')
