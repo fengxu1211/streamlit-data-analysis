@@ -25,7 +25,7 @@ from langchain.vectorstores import Chroma
 from langchain_patch.chains import SQLDatabaseChain
 
 # ***** CONFIGURABLE PARAMETERS *****
-REGION_NAME = os.environ.get("REGION_NAME", "us-east-1")
+REGION_NAME = os.environ.get("BEDROCK_REGION", "us-west-2")
 RDS_REGION_NAME = os.environ.get("RDS_REGION_NAME", "ap-northeast-1")
 MODEL_NAME = os.environ.get("MODEL_NAME", "anthropic.claude-v2")
 TEMPERATURE = os.environ.get("TEMPERATURE", 0)
