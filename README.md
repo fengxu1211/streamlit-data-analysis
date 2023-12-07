@@ -33,7 +33,12 @@ And attach an inline policy to this IAM Role with following permissions:
 Make sure you have enabled model access in AWS Console in us-west-2 (美国西部 (俄勒冈州)) region for Claude 2 model.
 
 ### 3. Installation
-Execute following commands in EC2.
+Execute following commands in EC2 with ec2-user. If not this user, you can use following command to switch:
+
+```
+sudo su - ec2-user
+```
+
 ```bash
 # Install components
 sudo dnf install docker python3-pip git -y && pip3 install docker-compose
@@ -68,6 +73,13 @@ Wait for at least 3 mins after "docker-compose up" ran
 docker exec nlq-webserver python opensearch_deploy.py
 ```
 
+If the script's execution has failed with any error. Please use following command to delete index and rerun the previous command.
+```
+curl -XDELETE -k -u admin:admin "https://localhost:9200/uba"
+```
+
 ### 6. Access Streamlit Web UI
 
 Open url in the browser: `http://<your-ec2-public-ip>`
+
+Note: use HTTP instead of HTTPs.

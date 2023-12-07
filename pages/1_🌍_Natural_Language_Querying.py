@@ -22,7 +22,7 @@ with open(os.path.join(os.getcwd(), 'config_files', '1_config.json')) as f:
     opensearch_config = env_vars['data_sources']['shopping_guide']['opensearch']
     for key in opensearch_config:
         opensearch_config[key] = os.getenv(opensearch_config[key].replace('$', ''))
-    print(f'{opensearch_config=}')
+    logger.info(f'{opensearch_config=}')
 
 
 st.set_page_config(layout="wide")
@@ -100,7 +100,8 @@ with st.expander("Quick Start: Click on the following buttons to start searching
     # add select box for which model to use
     continue_execution = True
     if st.button('Run', type='primary', use_container_width=True):
-
+        # clear last query result
+        st.session_state['result'] = ''
         if search_box == '':
             st.error("Please enter a valid query.")
             continue_execution = False
@@ -149,6 +150,7 @@ with st.expander("Quick Start: Click on the following buttons to start searching
                                          search_box,
                                          examples=retrieve_result)
 
+            logger.info('got llm response: ')
             logger.info(response)
             # if model_type == "SQLCoder":
             #     st.session_state['result'] = response.json()['response']
@@ -203,15 +205,17 @@ if st.session_state['show_assistant']:
 
     with st.chat_message("assistant"):
         st.markdown('The generated SQL statement is:')
-        st_ace(
-            value=st.session_state['result'],
-            language="sql" if st.session_state['option'] == "Text2SQL" else "python",
-            theme="monokai",
-            key="ace-editor",
-            font_size=20,
-            height=300,
-            wrap=True
-        )
+
+        code_snippet = st.code(st.session_state['result'], language="sql")
+        # st_ace(
+        #     value=st.session_state['result'],
+        #     language="sql" if st.session_state['option'] == "Text2SQL" else "python",
+        #     theme="monokai",
+        #     key="ace-editor",
+        #     font_size=20,
+        #     height=300,
+        #     wrap=True
+        # )
 
     with st.chat_message("assistant"):
         st.markdown('Generation process explanations:')
@@ -230,7 +234,12 @@ if st.session_state['show_assistant']:
                 opensearch_password=env_vars['data_sources'][selected_profile]['opensearch']['opensearch_password'],
                 index_name=env_vars['data_sources'][selected_profile]['opensearch']['index_name'],
                 query=search_box,
-                sql=st.session_state['result'])
+                sql=st.session_state['result'],
+                host=env_vars['data_sources'][selected_profile]['opensearch'][
+                    'opensearch_host'],
+                port=env_vars['data_sources'][selected_profile]['opensearch'][
+                    'opensearch_port']
+            )
         if feedback[1].button('👎 Downvote', type='secondary', use_container_width=True):
             # do something here
             pass

@@ -6,6 +6,9 @@ from botocore.config import Config
 from opensearchpy import OpenSearch
 from utils import opensearch
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 BEDROCK_AWS_REGION = os.environ.get('BEDROCK_REGION', 'us-west-2')
 
@@ -105,8 +108,7 @@ Assistant:''' % (ddl, language, hints, example_prompt, search_box)
         "temperature": 0.1,
         "top_p": 0.9,
     }
-    print('prompt-----')
-    print(prompt)
+    logger.info(f'prompt: {prompt}')
     response = invoke_model(payload, model_id=model_id)
     return response
 
@@ -165,17 +167,19 @@ def retrieve_results_from_opensearch(index_name, region_name, domain, opensearch
     return response['hits']['hits']
 
 
-def upload_results_to_opensearch(region_name, domain, opensearch_user, opensearch_password, index_name, query, sql, port=443):
+def upload_results_to_opensearch(region_name, domain, opensearch_user, opensearch_password, index_name, query, sql,
+                                 host='', port=443):
     auth = (opensearch_user, opensearch_password)
-    host = opensearch.get_opensearch_endpoint(domain, region_name)
-
+    if len(host) == 0:
+        host = opensearch.get_opensearch_endpoint(domain, region_name)
+        port = 443
     # Create the client with SSL/TLS enabled, but hostname verification disabled.
     opensearch_client = OpenSearch(
         hosts=[{'host': host, 'port': port}],
         http_compress=True,  # enables gzip compression for request bodies
         http_auth=auth,
         use_ssl=True,
-        verify_certs=True,
+        verify_certs=False,
         ssl_assert_hostname=False,
         ssl_show_warn=False
     )
