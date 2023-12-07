@@ -19,7 +19,7 @@
                     "description": "用户信息表，记录了每个用户的年龄和性别。共有3列。每条记录都有一个唯一的用户ID（列'user_id'）。"
                 }
             },
-            "hints": "",
+            "hints": "For timestamp column, please use function FROM_UNIXTIME(int) to convert it to date datatype",
             "opensearch": {
                 "opensearch_host": "$AOS_HOST",
                 "opensearch_port": "$AOS_PORT",
