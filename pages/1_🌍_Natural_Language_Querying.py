@@ -78,8 +78,7 @@ with st.expander("Quick Start: Click on the following buttons to start searching
     # search_samples = ["oppty最多的use case是什么", "oppty最少的行业是什么", "最近三个月行业涨跌趋势", "aaa"]
     # search_samples = ["what is top 10 use case campaign name with the most oppty", "what is the top 10 industry with the most oppty",
     #                   "what is the number of opptys grouped by oppty stages"]
-    search_samples = ["销量前十的商品是什么", "用户的平均年龄是多少？",
-                      "商品的平均价格是多少？"]
+    search_samples = env_vars['data_sources'][selected_profile]['search_samples']
 
     # Create columns for the predefined search samples
     search_sample_columns = st.columns(3)
@@ -186,7 +185,7 @@ with st.expander("Quick Start: Click on the following buttons to start searching
                             headers = {
                                 'Content-Type': 'application/json'
                             }
-                            result = query_from_database(db_url=str(st.session_state['profiles'][selected_profile]),
+                            result = query_from_database(p_db_url=str(st.session_state['profiles'][selected_profile]),
                                                          query=str(st.session_state['result']))
                             logger.info(f'{result=}')
                             st.session_state['dataframe'] = pd.DataFrame(eval(result['data']),

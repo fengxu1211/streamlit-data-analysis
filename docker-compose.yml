@@ -87,6 +87,9 @@ services:
       - "80:8501"
     expose:
       - "8501"
+    volumes:
+      - ./config_files:/app/config_files
+      - ./deployment:/app/deployment
     networks:
       - opensearch-net
   litellmproxy:
