@@ -11,13 +11,16 @@ def query_from_database(p_db_url: str, query):
     Query the database
     """
     try:
-        engine = db.create_engine(p_db_url.format(
-            RDS_MYSQL_HOST=RDS_MYSQL_HOST,
-            RDS_MYSQL_PORT=RDS_MYSQL_PORT,
-            RDS_MYSQL_USERNAME=RDS_MYSQL_USERNAME,
-            RDS_MYSQL_PASSWORD=RDS_MYSQL_PASSWORD,
-            RDS_MYSQL_DBNAME=RDS_MYSQL_DBNAME,
-        ))
+        if '{RDS_MYSQL_USERNAME}' in p_db_url:
+            engine = db.create_engine(p_db_url.format(
+                RDS_MYSQL_HOST=RDS_MYSQL_HOST,
+                RDS_MYSQL_PORT=RDS_MYSQL_PORT,
+                RDS_MYSQL_USERNAME=RDS_MYSQL_USERNAME,
+                RDS_MYSQL_PASSWORD=RDS_MYSQL_PASSWORD,
+                RDS_MYSQL_DBNAME=RDS_MYSQL_DBNAME,
+            ))
+        else:
+            engine = db.create_engine(p_db_url)
         with engine.connect() as connection:
             logger.info(f'{query=}')
             cursor = connection.execute(text(query))

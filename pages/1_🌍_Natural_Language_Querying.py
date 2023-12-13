@@ -111,6 +111,10 @@ with st.expander("Quick Start: Click on the following buttons to start searching
                 retrieve_result = None
                 if use_rag:
                     try:
+                        # HACK: always use first opensearch
+                        origin_selected_profile = selected_profile
+                        selected_profile = "shopping_guide"
+
                         records_with_embedding = create_vector_embedding_with_bedrock(search_box, index_name=
                         env_vars['data_sources'][selected_profile]['opensearch']['index_name'])
                         retrieve_result = retrieve_results_from_opensearch(
@@ -126,10 +130,12 @@ with st.expander("Quick Start: Click on the following buttons to start searching
                                 'opensearch_port'],
                             query_embedding=records_with_embedding['vector_field'],
                             top_k=2)
+                        selected_profile = origin_selected_profile
                     except Exception as e:
                         logger.exception(e)
                         logger.info(f"Failed to retrieve Q/A from OpenSearch: {str(e)}")
                         retrieve_result = None
+                        selected_profile = origin_selected_profile
 
             with st.spinner('Generating SQL... (Take up to 20s)'):
                 # Whether Retrieving Few Shots from Database
