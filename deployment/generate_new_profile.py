@@ -47,6 +47,21 @@ def main():
         engine = db.create_engine(db_url)
         connection = engine.connect()
         print('connected to database')
+
+        print("Enter table name (no schema name, seperated by ,), leave blank means all tables:")
+        tables_string = input()
+        if len(tables_string) > 0 and tables_string.strip() != '':
+            # Split text on commas
+            split_text = tables_string.split(",")
+
+            # Trim each string
+            if schema:
+                split_tables = [schema + '.' + x.strip() for x in split_text]
+            else:
+                split_tables = [x.strip() for x in split_text]
+        else:
+            split_tables = []
+
         metadata = db.MetaData()
         if schema:
             metadata.reflect(bind=connection, schema=schema)
@@ -56,6 +71,9 @@ def main():
         table_info = {}
 
         for table_name, table in tables.items():
+            # If table name is provided, only generate DDL for those tables. Otherwise, generate DDL for all tables.
+            if len(split_tables) > 0 and table_name not in split_tables:
+                continue
             # Start the DDL statement
             ddl = f"CREATE TABLE {table_name} -- {table.comment} \n (\n"
             column_descriptions = []
@@ -66,6 +84,8 @@ def main():
             table_info[table_name] = {}
             table_info[table_name]['ddl'] = ddl
             table_info[table_name]['description'] = table.comment
+
+            print(f'added table {table_name}')
 
         with open(os.path.join(os.getcwd(), 'config_files', '1_config.json')) as f:
             profiles = json.load(f)
