@@ -19,7 +19,7 @@ with open(os.path.join(os.getcwd(), 'config_files', '1_config.json')) as f:
 
 st.set_page_config(layout="wide")
 
-st.session_state['profiles'] = env_vars['data_sources']
+st.session_state['view_profiles'] = env_vars['data_sources']
 
 # st.subheader("Add new data source profile")
 
@@ -72,7 +72,7 @@ db_mapping = {
 st.subheader("Edit profile")
 
 with st.expander("Select a profile", expanded=True):
-    selected_profile = st.selectbox("", list(st.session_state['profiles'].keys()))
+    selected_profile = st.selectbox("", list(st.session_state['view_profiles'].keys()))
 
     # if st.button('Delete Profile'):
     #     confirm = st.checkbox("Please confirm deletion")
