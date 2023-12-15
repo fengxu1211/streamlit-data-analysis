@@ -2,7 +2,6 @@ from typing import Union
 
 import streamlit as st
 import pandas as pd
-import sys
 import os
 from io import StringIO
 
@@ -19,6 +18,7 @@ from io import BytesIO
 from PIL import Image
 from PIL.Image import Image as PILImage
 import textwrap
+from utils.logging import init_log
 
 st.set_page_config(
     page_title="Chat With CSV Demo",
@@ -29,25 +29,6 @@ st.set_page_config(
         'About': "# This is a header. This is an *extremely* cool app!"
     }
 )
-
-
-def init_log():
-    """Initialize loguru log information"""
-    # Just for sys.stdout log message
-    format_stdout = (
-        "<g>{time:YYYY-MM-DD HH:mm:ss}</g> | <lvl>{level}</lvl>"
-        ": {message}"
-    )
-
-    logger.remove()
-
-    logger.configure(
-        handlers=[
-            dict(sink=sys.stdout, format=format_stdout, level="TRACE"),
-        ],
-    )
-
-    return logger
 
 
 def write_response(response_dict: dict):

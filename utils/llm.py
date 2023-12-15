@@ -6,9 +6,7 @@ from botocore.config import Config
 from opensearchpy import OpenSearch
 from utils import opensearch
 import os
-import logging
-
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 BEDROCK_AWS_REGION = os.environ.get('BEDROCK_REGION', 'us-west-2')
 
@@ -104,8 +102,8 @@ Now, you need to answer the question: "%s" in SQL. Please give the SQL statement
 Assistant:''' % (ddl, language, hints, example_prompt, search_box)
     payload = {
         "prompt": prompt,
-        "max_tokens_to_sample": 300,
-        "temperature": 0.1,
+        "max_tokens_to_sample": 1024,
+        "temperature": 0,
         "top_p": 0.9,
     }
     logger.info(f'prompt: {prompt}')
@@ -185,15 +183,15 @@ def upload_results_to_opensearch(region_name, domain, opensearch_user, opensearc
     )
 
     # Vector embedding using Amazon Bedrock Titan text embedding
-    print(f"Creating embeddings for records")
+    logger.info(f"Creating embeddings for records")
     record_with_embedding = create_vector_embedding_with_bedrock(query, index_name)
 
     record_with_embedding['sql'] = sql
     success, failed = opensearch.put_bulk_in_opensearch([record_with_embedding], opensearch_client)
     if success == 1:
-        print("Finished creating records using Amazon Bedrock Titan text embedding")
+        logger.info("Finished creating records using Amazon Bedrock Titan text embedding")
         return True
     else:
-        print("Failed to create records using Amazon Bedrock Titan text embedding")
+        logger.error("Failed to create records using Amazon Bedrock Titan text embedding")
         return False
 

@@ -1,9 +1,8 @@
 import sqlalchemy as db
 from sqlalchemy import text
 from utils.env_var import RDS_MYSQL_HOST, RDS_MYSQL_PORT, RDS_MYSQL_USERNAME, RDS_MYSQL_PASSWORD, RDS_MYSQL_DBNAME, RDS_PQ_SCHEMA
-import logging
-
-logger = logging.getLogger(__name__)
+import pandas as pd
+from loguru import logger
 
 
 def query_from_database(p_db_url: str, query):
@@ -23,7 +22,7 @@ def query_from_database(p_db_url: str, query):
             engine = db.create_engine(p_db_url)
         with engine.connect() as connection:
             logger.info(f'{query=}')
-            if RDS_PQ_SCHEMA:
+            if RDS_PQ_SCHEMA and 'postgres' in p_db_url:
                 query = f'SET search_path TO {RDS_PQ_SCHEMA}; {query}'
             cursor = connection.execute(text(query))
             results = cursor.fetchall()
@@ -37,3 +36,26 @@ def query_from_database(p_db_url: str, query):
         "query": query,
         "columns": columns
     }
+
+def query_from_sql_pd(p_db_url: str, query):
+    """
+    Query the database
+    """
+    if '{RDS_MYSQL_USERNAME}' in p_db_url:
+        engine = db.create_engine(p_db_url.format(
+            RDS_MYSQL_HOST=RDS_MYSQL_HOST,
+            RDS_MYSQL_PORT=RDS_MYSQL_PORT,
+            RDS_MYSQL_USERNAME=RDS_MYSQL_USERNAME,
+            RDS_MYSQL_PASSWORD=RDS_MYSQL_PASSWORD,
+            RDS_MYSQL_DBNAME=RDS_MYSQL_DBNAME,
+        ))
+    else:
+        engine = db.create_engine(p_db_url)
+
+    # with engine.connect() as conn, conn.begin():
+    #         data = pd.read_sql_table("data", conn)
+    with engine.connect() as connection:
+        logger.info(f'{query=}')
+        if RDS_PQ_SCHEMA and 'postgres' in p_db_url:
+            query = f'SET search_path TO {RDS_PQ_SCHEMA}; {query}'
+        return pd.read_sql_query(text(query), connection)
