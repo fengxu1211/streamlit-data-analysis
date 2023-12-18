@@ -21,11 +21,15 @@ config = Config(
 # model IDs are here:
 # https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters-claude.html
 
-try:
-    bedrock = boto3.client(service_name='bedrock-runtime', config=config)
-except Exception as e:
-    print(e)
-    print('bedrock client initialization failed')
+bedrock = None
+
+
+@logger.catch
+def get_bedrock_client():
+    global bedrock
+    if not bedrock:
+        bedrock = boto3.client(service_name='bedrock-runtime', config=config)
+    return bedrock
 
 
 def sqlcoder(SQLCODER_API_ENDPOINT, payload):
@@ -42,7 +46,7 @@ def invoke_model(payload, model_id='anthropic.claude-v2:1'):
     accept = 'application/json'
     contentType = 'application/json'
 
-    response = bedrock.invoke_model(body=body, modelId=model_id, accept=accept, contentType=contentType)
+    response = get_bedrock_client().invoke_model(body=body, modelId=model_id, accept=accept, contentType=contentType)
     response_body = json.loads(response.get('body').read())
 
     return response_body['completion']
@@ -118,7 +122,7 @@ def create_vector_embedding_with_bedrock(text, index_name):
     accept = "application/json"
     contentType = "application/json"
 
-    response = bedrock.invoke_model(
+    response = get_bedrock_client().invoke_model(
         body=body, modelId=modelId, accept=accept, contentType=contentType
     )
     response_body = json.loads(response.get("body").read())
@@ -194,4 +198,3 @@ def upload_results_to_opensearch(region_name, domain, opensearch_user, opensearc
     else:
         logger.error("Failed to create records using Amazon Bedrock Titan text embedding")
         return False
-
