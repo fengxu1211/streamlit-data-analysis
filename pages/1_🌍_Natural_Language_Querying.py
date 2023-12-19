@@ -5,6 +5,8 @@ import pandas as pd
 import plotly.express as px
 from dotenv import load_dotenv
 from loguru import logger
+
+from utils.database import get_db_url_dialect
 from utils.llm import claude_to_sql, create_vector_embedding_with_bedrock, retrieve_results_from_opensearch, \
     upload_results_to_opensearch
 from utils.apis import query_from_sql_pd
@@ -291,10 +293,12 @@ def main():
                     with st.spinner('Generating SQL... (Take up to 20s)'):
                         # Whether Retrieving Few Shots from Database
                         logger.info('Sending request...')
-                        response = claude_to_sql(env_vars['data_sources'][selected_profile]['ddl'],
-                                                 env_vars['data_sources'][selected_profile]['hints'],
+                        database_profile = env_vars['data_sources'][selected_profile]
+                        response = claude_to_sql(database_profile['ddl'],
+                                                 database_profile['hints'],
                                                  search_box,
-                                                 examples=retrieve_result)
+                                                 examples=retrieve_result,
+                                                 dialect=get_db_url_dialect(database_profile['db_url']))
 
                         logger.info(f'got llm response: {response}')
                         current_nlq_chain.set_generated_sql_response(response)

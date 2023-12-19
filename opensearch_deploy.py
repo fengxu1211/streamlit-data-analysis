@@ -145,7 +145,7 @@ def index_to_opensearch():
         print(f"Embedding for record {i} created")
         records_with_embedding['sql'] = record['sql']
         all_json_records.append(records_with_embedding)
-        if i % 500 == 0 or i == len(all_records) - 1:
+        if i % 500 == 0 or i == len(all_records):
             # Bulk put all records to OpenSearch
             success, failed = opensearch.put_bulk_in_opensearch(all_json_records, opensearch_client)
             all_json_records = []
