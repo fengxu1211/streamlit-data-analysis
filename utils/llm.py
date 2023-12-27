@@ -155,7 +155,7 @@ def create_vector_embedding_with_bedrock(text, index_name):
 
 
 def retrieve_results_from_opensearch(index_name, region_name, domain, opensearch_user, opensearch_password,
-                                     query_embedding, top_k=2, host='', port=443):
+                                     query_embedding, top_k=3, host='', port=443):
     auth = (opensearch_user, opensearch_password)
     if len(host) == 0:
         host = opensearch.get_opensearch_endpoint(domain, region_name)
@@ -172,7 +172,7 @@ def retrieve_results_from_opensearch(index_name, region_name, domain, opensearch
         ssl_show_warn=False
     )
     search_query = {
-        "size": 1,  # Adjust the size as needed to retrieve more or fewer results
+        "size": top_k,  # Adjust the size as needed to retrieve more or fewer results
         "query": {
             "knn": {
                 "vector_field": {  # Make sure 'vector_field' is the name of your vector field in OpenSearch

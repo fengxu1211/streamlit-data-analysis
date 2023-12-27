@@ -287,7 +287,7 @@ def main():
                                     port=env_vars['data_sources'][selected_profile]['opensearch'][
                                         'opensearch_port'],
                                     query_embedding=records_with_embedding['vector_field'],
-                                    top_k=2)
+                                    top_k=3)
                                 selected_profile = origin_selected_profile
 
                                 current_nlq_chain.set_retrieve_samples(retrieve_result)

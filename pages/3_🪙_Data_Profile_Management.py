@@ -51,7 +51,7 @@ def main():
                     st.session_state.profile_page_mode = 'default'
 
                 # st.session_state.profile_page_mode = 'default'
-    elif st.session_state.profile_page_mode == 'update':
+    elif st.session_state.profile_page_mode == 'update' and st.session_state.current_profile_name is not None:
         st.subheader('Update Data Profile')
         current_profile = ProfileManagement.get_profile_by_name(st.session_state.current_profile_name)
         profile_name = st.text_input("Profile Name", value=current_profile.profile_name, disabled=True)
