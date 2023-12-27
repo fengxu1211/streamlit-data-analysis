@@ -60,8 +60,10 @@ def main():
         schema_names = st.multiselect("Schema Name", ConnectionManagement.get_all_schemas_by_config(conn_config),
                                       default=current_profile.schemas)
         tables_from_db = ConnectionManagement.get_table_name_by_config(conn_config, schema_names)
+        # make sure all tables defined in profile are existing in the table list of the current database
+        intersection_tables = set(tables_from_db) & set(current_profile.tables)
         selected_tables = st.multiselect("Select tables included in this profile", tables_from_db,
-                                         default=current_profile.tables)
+                                         default=intersection_tables)
         comments = st.text_input("Comments", value=current_profile.comments)
 
         if st.button('Update Profile', type='primary'):
