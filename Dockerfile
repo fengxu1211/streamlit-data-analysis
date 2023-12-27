@@ -10,9 +10,10 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-COPY . /app/
-
+COPY requirements.txt /app/
 RUN pip3 install -r requirements.txt
+
+COPY . /app/
 
 # set streamlit config via env vars
 ENV STREAMLIT_SERVER_ENABLE_STATIC_SERVING=true
