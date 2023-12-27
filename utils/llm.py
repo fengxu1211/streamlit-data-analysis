@@ -56,7 +56,22 @@ def claude_select_table():
     pass
 
 
-def claude_to_sql(ddl, hints, search_box, examples=None, model_id='anthropic.claude-v2:1', language='mysql'):
+DEFAULT_DIALECT_PROMPT = '''You are a data analyst who writes SQL statements.'''
+
+TOP_K = 100
+POSTGRES_DIALECT_PROMPT = """You are a PostgreSQL expert. Given an input question, first create a syntactically correct PostgreSQL query to run, then look at the results of the query and return the answer to the input question.
+Unless the user specifies in the question a specific number of examples to obtain, query for at most {top_k} results using the LIMIT clause as per PostgreSQL. You can order the results to return the most informative data in the database.
+Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in double quotes (") to denote them as delimited identifiers.
+Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
+Pay attention to use CURRENT_DATE function to get the current date, if the question involves "today".""".format(top_k=TOP_K)
+
+MYSQL_DIALECT_PROMPT = """You are a MySQL expert. Given an input question, first create a syntactically correct MySQL query to run, then look at the results of the query and return the answer to the input question.
+Unless the user specifies in the question a specific number of examples to obtain, query for at most {top_k} results using the LIMIT clause as per MySQL. You can order the results to return the most informative data in the database.
+Never query for all columns from a table. You must query only the columns that are needed to answer the question. Wrap each column name in backticks (`) to denote them as delimited identifiers.
+Pay attention to use only the column names you can see in the tables below. Be careful to not query for columns that do not exist. Also, pay attention to which column is in which table.
+Pay attention to use CURDATE() function to get the current date, if the question involves "today".""".format(top_k=TOP_K)
+
+def claude_to_sql(ddl, hints, search_box, examples=None, model_id='anthropic.claude-v2:1', dialect='mysql'):
     long_string = ""
     for table_name, table_data in ddl.items():
         ddl_string = table_data["ddl"]
@@ -66,21 +81,30 @@ def claude_to_sql(ddl, hints, search_box, examples=None, model_id='anthropic.cla
 
     ddl = long_string
 
+    logger.info(f'{dialect=}')
+    if dialect == 'postgresql':
+        dialect_prompt = POSTGRES_DIALECT_PROMPT
+    elif dialect == 'mysql':
+        dialect_prompt = MYSQL_DIALECT_PROMPT
+    elif dialect == 'redshift':
+        dialect_prompt = '''You are a Amazon Redshift expert. Given an input question, first create a syntactically correct Redshift query to run, then look at the results of the query and return the answer to the input question.'''
+    else:
+        dialect_prompt = DEFAULT_DIALECT_PROMPT
+
     if not examples:
         prompt = '''Human:
-You are a data analyst who writes SQL statements.
+{dialect_prompt}
 Here is DDL of the database you are working on:
 ```sql
-%s
+{ddl}
 ```
 Please do not perform any modifications to SQL tables.
 Absolutely do not output any columns, tables, or other information that is not mentioned in the database. Ensure that the program runs without errors.
-Please use the %s to answer the questions.
 Here are some hints:
-%s
-You need to answer the question: "%s" in SQL. Please give the SQL statement that can answer the question. Aside from giving the SQL answer, concisely explain yourself after giving the answer in same language as the question.
-Assistant:''' % (ddl, language, hints, search_box)
-        print(prompt)
+{hints}
+You need to answer the question: "{question}" in SQL. Please give the SQL statement that can answer the question. Aside from giving the SQL answer, concisely explain yourself after giving the answer in same language as the question.
+Assistant:'''.format(dialect_prompt=dialect_prompt, ddl=ddl, hints=hints, question=search_box)
+        logger.info(f'{prompt=}')
     else:
         # assemble examples into a string
 
@@ -90,20 +114,19 @@ Assistant:''' % (ddl, language, hints, search_box)
             example_prompt += "A: ```sql\n" + item['_source']['sql'] + "```\n"
 
         prompt = '''Human:
-You are a data analyst who writes SQL statements.
+{dialect_prompt}
 Here is DDL of the database you are working on:
 ```sql
-%s
+{ddl}
 ```
 Please do not perform any modifications to SQL tables.
 Absolutely do not output any columns, tables, or other information that is not mentioned in the database. Ensure that the program runs without errors.
-Please use the %s to answer the questions.
 Here are some hints:
-%s
-Also, here are some examples of generating SQL using natural lauguage:
-%s
-Now, you need to answer the question: "%s" in SQL. Please give the SQL statement that can answer the question. Aside from giving the SQL answer, concisely explain yourself after giving the answer in same language as the question.
-Assistant:''' % (ddl, language, hints, example_prompt, search_box)
+{hints}
+Also, here are some examples of generating SQL using natural language:
+{examples}
+Now, you need to answer the question: "{question}" in SQL. Please give the SQL statement that can answer the question. Aside from giving the SQL answer, concisely explain yourself after giving the answer in same language as the question.
+Assistant:'''.format(dialect_prompt=dialect_prompt, ddl=ddl, hints=hints, examples=example_prompt, question=search_box)
     payload = {
         "prompt": prompt,
         "max_tokens_to_sample": 1024,
@@ -132,7 +155,7 @@ def create_vector_embedding_with_bedrock(text, index_name):
 
 
 def retrieve_results_from_opensearch(index_name, region_name, domain, opensearch_user, opensearch_password,
-                                     query_embedding, top_k=2, host='', port=443):
+                                     query_embedding, top_k=3, host='', port=443):
     auth = (opensearch_user, opensearch_password)
     if len(host) == 0:
         host = opensearch.get_opensearch_endpoint(domain, region_name)
@@ -149,7 +172,7 @@ def retrieve_results_from_opensearch(index_name, region_name, domain, opensearch
         ssl_show_warn=False
     )
     search_query = {
-        "size": 1,  # Adjust the size as needed to retrieve more or fewer results
+        "size": top_k,  # Adjust the size as needed to retrieve more or fewer results
         "query": {
             "knn": {
                 "vector_field": {  # Make sure 'vector_field' is the name of your vector field in OpenSearch

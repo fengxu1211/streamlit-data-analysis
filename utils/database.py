@@ -31,5 +31,9 @@ def get_all_table_names(db_url: str, is_sample_db: bool, schema: str = None):
     return table_name_list
 
 
+def get_db_url_dialect(db_url: str) -> str:
+    return db_url.split("://")[0].split('+')[0]
+
+
 def get_dll_for_tables(db_url: str, is_sample_db: bool, schema: str = None, selected_tables: list = []):
     pass

@@ -5,6 +5,10 @@ import pandas as pd
 import plotly.express as px
 from dotenv import load_dotenv
 from loguru import logger
+
+from nlq.business.connection import ConnectionManagement
+from nlq.business.profile import ProfileManagement
+from utils.database import get_db_url_dialect
 from utils.llm import claude_to_sql, create_vector_embedding_with_bedrock, retrieve_results_from_opensearch, \
     upload_results_to_opensearch
 from utils.apis import query_from_sql_pd
@@ -56,9 +60,13 @@ class NLQChain:
 
     def get_executed_result_df(self, force_execute_query=True):
         if self.executed_result_df is None and force_execute_query:
+            db_url = st.session_state['profiles'][self.profile]['db_url']
+            if not db_url:
+                conn_name = st.session_state['profiles'][self.profile]['conn_name']
+                db_url = ConnectionManagement.get_db_url_by_name(conn_name)
             self.executed_result_df = query_from_sql_pd(
-                p_db_url=str(st.session_state['profiles'][self.profile]),
-                query=str(self.get_generated_sql()))
+                p_db_url=db_url,
+                query=self.get_generated_sql())
 
         return self.executed_result_df
 
@@ -154,7 +162,16 @@ def main():
 
     # Initialize or set up state variables
     if 'profiles' not in st.session_state:
-        st.session_state['profiles'] = {i: v['db_url'] for i, v in env_vars['data_sources'].items()}
+        demo_profile = {}
+        for i, v in env_vars['data_sources'].items():
+            if 'is_demo' in v and v['is_demo']:
+                demo_profile[i + '(demo)'] = v
+
+        # get all user defined profiles with info (db_url, conn_name, tables_info, hints, search_samples)
+        all_profiles = ProfileManagement.get_all_profiles_with_info()
+        all_profiles.update(demo_profile)
+        st.session_state['profiles'] = all_profiles
+        # logger.info(f'{all_profiles=}')
 
     if 'option' not in st.session_state:
         st.session_state['option'] = 'Text2SQL'
@@ -179,7 +196,7 @@ def main():
     with st.sidebar:
         st.title('Setting')
         # The default option can be the first one in the profiles dictionary, if exists
-        selected_profile = st.selectbox("Data Source Profile", list(st.session_state.get('profiles', {}).keys()))
+        selected_profile = st.selectbox("Data Profile", list(st.session_state.get('profiles', {}).keys()))
         if selected_profile != st.session_state.current_profile:
             # clear session state
             st.session_state.selected_sample = ''
@@ -196,9 +213,13 @@ def main():
     # Part II: Search Section
     st.subheader("Start Searching")
 
+    st.caption('Profile description:')
+    st.write(st.session_state.profiles[selected_profile]['comments'])
+
     st.info("Quick Start: Click on the following buttons to start searching.")
+    # logger.info(f'{st.session_state.profiles=}')
     # Pre-written search samples
-    search_samples = env_vars['data_sources'][selected_profile]['search_samples']
+    search_samples = st.session_state.profiles[selected_profile]['search_samples']
 
     question_column_number = 3
     # Create columns for the predefined search samples
@@ -266,7 +287,7 @@ def main():
                                     port=env_vars['data_sources'][selected_profile]['opensearch'][
                                         'opensearch_port'],
                                     query_embedding=records_with_embedding['vector_field'],
-                                    top_k=2)
+                                    top_k=3)
                                 selected_profile = origin_selected_profile
 
                                 current_nlq_chain.set_retrieve_samples(retrieve_result)
@@ -291,10 +312,12 @@ def main():
                     with st.spinner('Generating SQL... (Take up to 20s)'):
                         # Whether Retrieving Few Shots from Database
                         logger.info('Sending request...')
-                        response = claude_to_sql(env_vars['data_sources'][selected_profile]['ddl'],
-                                                 env_vars['data_sources'][selected_profile]['hints'],
+                        database_profile = st.session_state.profiles[selected_profile]
+                        response = claude_to_sql(database_profile['tables_info'],
+                                                 database_profile['hints'],
                                                  search_box,
-                                                 examples=retrieve_result)
+                                                 examples=retrieve_result,
+                                                 dialect=get_db_url_dialect(database_profile['db_url']))
 
                         logger.info(f'got llm response: {response}')
                         current_nlq_chain.set_generated_sql_response(response)

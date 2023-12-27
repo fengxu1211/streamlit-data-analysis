@@ -5,7 +5,7 @@ import pandas as pd
 from loguru import logger
 
 
-def query_from_database(p_db_url: str, query):
+def query_from_database(p_db_url: str, query, schema=None):
     """
     Query the database
     """
@@ -22,8 +22,8 @@ def query_from_database(p_db_url: str, query):
             engine = db.create_engine(p_db_url)
         with engine.connect() as connection:
             logger.info(f'{query=}')
-            if RDS_PQ_SCHEMA and 'postgres' in p_db_url:
-                query = f'SET search_path TO {RDS_PQ_SCHEMA}; {query}'
+            # if schema and 'postgres' in p_db_url:
+            #     query = f'SET search_path TO {schema}; {query}'
             cursor = connection.execute(text(query))
             results = cursor.fetchall()
             columns = list(cursor.keys())
@@ -37,7 +37,8 @@ def query_from_database(p_db_url: str, query):
         "columns": columns
     }
 
-def query_from_sql_pd(p_db_url: str, query):
+
+def query_from_sql_pd(p_db_url: str, query, schema=None):
     """
     Query the database
     """
@@ -52,10 +53,8 @@ def query_from_sql_pd(p_db_url: str, query):
     else:
         engine = db.create_engine(p_db_url)
 
-    # with engine.connect() as conn, conn.begin():
-    #         data = pd.read_sql_table("data", conn)
     with engine.connect() as connection:
         logger.info(f'{query=}')
-        if RDS_PQ_SCHEMA and 'postgres' in p_db_url:
-            query = f'SET search_path TO {RDS_PQ_SCHEMA}; {query}'
+        # if schema and 'postgres' in p_db_url:
+        #     query = f'SET search_path TO {RDS_PQ_SCHEMA}; {query}'
         return pd.read_sql_query(text(query), connection)

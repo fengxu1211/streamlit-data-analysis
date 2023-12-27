@@ -4,8 +4,10 @@
     },
     "data_sources": {
         "shopping_guide": {
+            "is_demo": true,
+            "comments": "This is a user behavior analysis dataset.",
             "db_url": "mysql+pymysql://{RDS_MYSQL_USERNAME}:{RDS_MYSQL_PASSWORD}@{RDS_MYSQL_HOST}:{RDS_MYSQL_PORT}/{RDS_MYSQL_DBNAME}",
-            "ddl": {
+            "tables_info": {
                 "interactions": {
                     "ddl": "CREATE TABLE `interactions`(\n`item_id` string, --商品ID\n`user_id` int, --用户ID\n`event_type` string, --交互事件类型，例如浏览、购买等\n`timestamp` bigint, --交互事件发生的时间戳\n`discount` string --折扣信息\n)",
                     "description": "记录用户与商品交互的数据，包括用户对商品的浏览、购买等行为。每条记录都有一个唯一的商品ID（列'item_id'）和一个用户ID（列'user_id'）。"
