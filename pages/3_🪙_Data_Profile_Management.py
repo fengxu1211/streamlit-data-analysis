@@ -62,6 +62,11 @@ def main():
         tables_from_db = ConnectionManagement.get_table_name_by_config(conn_config, schema_names)
         # make sure all tables defined in profile are existing in the table list of the current database
         intersection_tables = set(tables_from_db) & set(current_profile.tables)
+        if len(intersection_tables) < len(current_profile.tables):
+            st.warning(
+                f"Some tables defined in this profile are not existing in the database.")
+        if len(intersection_tables) == 0:
+            intersection_tables = None
         selected_tables = st.multiselect("Select tables included in this profile", tables_from_db,
                                          default=intersection_tables)
         comments = st.text_input("Comments", value=current_profile.comments)
