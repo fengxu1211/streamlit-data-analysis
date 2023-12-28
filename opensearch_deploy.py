@@ -144,6 +144,7 @@ def index_to_opensearch():
         records_with_embedding = create_vector_embedding_with_bedrock(record['question'], index_name, bedrock_client)
         print(f"Embedding for record {i} created")
         records_with_embedding['sql'] = record['sql']
+        records_with_embedding['profile'] = record['profile']
         all_json_records.append(records_with_embedding)
         if i % 500 == 0 or i == len(all_records):
             # Bulk put all records to OpenSearch

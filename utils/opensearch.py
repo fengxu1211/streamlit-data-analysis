@@ -58,6 +58,9 @@ def create_index_mapping(opensearch_client, index_name):
                 },
                 "text": {
                     "type": "keyword"
+                },
+                "profile": {
+                    "type": "keyword"
                 }
             }
         }
